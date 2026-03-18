@@ -87,7 +87,7 @@ export default function DashboardLayout({ children }: { children: ReactNode }) {
         {/* BOTTOM */}
         <div className="p-3 border-t border-primary/20 flex flex-col gap-2">
           <div className="px-3 py-2 bg-primary/5 border border-primary/20">
-            <div className="text-primary text-xs font-mono truncate">{user?.username}@unbound</div>
+            <div className="text-primary text-xs font-mono truncate">{user?.email || 'user'}@unbound</div>
             <div className="text-muted-foreground text-[9px] font-mono">:~$ authenticated</div>
           </div>
           <button

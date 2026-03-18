@@ -547,7 +547,7 @@ export default function ChatTab() {
                   {msg.role === "user" ? (
                     <div className={`font-mono transition-opacity ${isOptimistic ? "opacity-70" : "opacity-100"}`}>
                       <span className="text-primary glow-text mr-2 text-sm" style={{ textShadow: isBound ? "0 0 8px rgba(255,80,80,0.6)" : undefined }}>
-                        {user?.username}@{isBound ? "bound" : "unbound"}:~$
+                        {user?.email?.split('@')[0] || 'user'}@{isBound ? "bound" : "unbound"}:~$
                       </span>
                       <span className="text-foreground/90 text-sm whitespace-pre-wrap">{msg.content}</span>
                       {isOptimistic && <span className="ml-2 text-primary/30 text-[10px] animate-pulse">sending...</span>}
@@ -614,7 +614,7 @@ export default function ChatTab() {
           <form onSubmit={handleSubmit} className="mt-auto border-t-2 border-border pt-3">
             <div className="flex items-center gap-2">
               <span className="text-primary glow-text font-mono text-sm whitespace-nowrap flex-shrink-0" style={{ textShadow: isBound ? "0 0 8px rgba(255,80,80,0.8)" : undefined }}>
-                {user?.username}@{isBound ? "bound" : "unbound"}:~$
+                {user?.email?.split('@')[0] || 'user'}@{isBound ? "bound" : "unbound"}:~$
               </span>
               <input
                 ref={inputRef}
