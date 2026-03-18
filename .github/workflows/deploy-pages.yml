@@ -48,6 +48,8 @@ jobs:
           GITHUB_PAGES: 'true'
           VITE_SUPABASE_URL: ${{ secrets.VITE_SUPABASE_URL }}
           VITE_SUPABASE_ANON_KEY: ${{ secrets.VITE_SUPABASE_ANON_KEY }}
+          VITE_OPENROUTER_API_KEY: ${{ secrets.VITE_OPENROUTER_API_KEY }}
+          VITE_HUGGINGFACE_TOKEN: ${{ secrets.VITE_HUGGINGFACE_TOKEN }}
 
       - name: Copy .nojekyll
         run: cp .nojekyll artifacts/unbound-ai/dist/public/.nojekyll
