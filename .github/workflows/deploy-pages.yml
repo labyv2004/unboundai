@@ -47,6 +47,9 @@ jobs:
         env:
           GITHUB_PAGES: 'true'
 
+      - name: Copy .nojekyll
+        run: cp .nojekyll artifacts/unbound-ai/dist/public/.nojekyll
+
       - name: Upload artifact to Pages
         uses: actions/upload-pages-artifact@v3
         with:

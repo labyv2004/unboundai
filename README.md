@@ -4,7 +4,7 @@
 
 ## 🚀 Живой demo
 
-👉 **[Открыть приложение →](https://labyv2004.github.io/)**
+👉 **[Открыть приложение →](https://labyv2004.github.io/unboundai/)**
 
 ## 📋 Требования
 
@@ -109,7 +109,7 @@ PORT=3000
 NODE_ENV=development
 
 # Frontend
-BASE_PATH=/                    # базовый путь для приложения
+BASE_PATH=/                    # или /unboundai/ для GitHub Pages
 BASE_URL=http://localhost:3000
 
 # AI APIs (опционально)
@@ -186,4 +186,4 @@ MIT
 
 **Готово к использованию! 🎉**
 
-Откройте https://labyv2004.github.io/ чтобы начать.
+Откройте https://labyv2004.github.io/unboundai/ чтобы начать.
