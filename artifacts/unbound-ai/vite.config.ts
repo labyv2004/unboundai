@@ -12,7 +12,9 @@ if (Number.isNaN(port) || port <= 0) {
   throw new Error(`Invalid PORT value: "${rawPort}"`);
 }
 
-const basePath = process.env.BASE_PATH || "/";
+const basePath = 
+  process.env.BASE_PATH || 
+  (process.env.GITHUB_PAGES === "true" ? "/unboundai/" : "/");
 
 export default defineConfig({
   base: basePath,
