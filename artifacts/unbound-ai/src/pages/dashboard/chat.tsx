@@ -47,21 +47,83 @@ function getApiBase() {
 
 const CONTEXT_KEY = "unbound_session_context";
 
+// Client-side AI API - calls OpenRouter directly from browser
 async function sendMessageApi(
   sessionId: number,
   data: { content: string; fileType?: string; fileName?: string; mode: string; sessionContext?: string },
   headers: Record<string, string>
 ) {
-  const res = await fetch(`${getApiBase()}/api/sessions/${sessionId}/messages`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json", ...headers },
-    body: JSON.stringify(data),
-  });
-  if (!res.ok) {
-    const err = await res.json().catch(() => ({}));
-    throw new Error((err as any).error || `HTTP ${res.status}`);
+  const apiBase = getApiBase();
+  
+  // If API server is available, use it
+  if (apiBase && !apiBase.includes("localhost")) {
+    try {
+      const res = await fetch(`${apiBase}/api/sessions/${sessionId}/messages`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", ...headers },
+        body: JSON.stringify(data),
+      });
+      if (res.ok) return res.json();
+    } catch (e) {
+      // Fall through to client-side AI
+    }
   }
-  return res.json();
+  
+  // Client-side AI using OpenRouter (free models available)
+  const openRouterKey = import.meta.env.VITE_OPENROUTER_API_KEY;
+  
+  if (openRouterKey) {
+    try {
+      const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          "Authorization": `Bearer ${openRouterKey}`,
+          "HTTP-Referer": window.location.href,
+          "X-Title": "UnboundAI",
+        },
+        body: JSON.stringify({
+          model: "anthropic/claude-3-haiku", // Free model
+          messages: [
+            { role: "system", content: "You are UnboundAI, a helpful AI assistant. Respond in a helpful, concise manner." },
+            { role: "user", content: data.content }
+          ],
+        }),
+      });
+      
+      if (response.ok) {
+        const result = await response.json();
+        const aiMessage = result.choices[0]?.message?.content || "I apologize, but I couldn't generate a response.";
+        return { 
+          message: { 
+            id: Date.now(), 
+            content: aiMessage, 
+            role: "assistant", 
+            createdAt: new Date().toISOString() 
+          } 
+        };
+      }
+    } catch (e) {
+      console.error("OpenRouter API error:", e);
+    }
+  }
+  
+  // Fallback: Mock AI response for demo
+  const mockResponses = [
+    "Я получил ваше сообщение! Это демо-режим. Для полноценной работы нужен API ключ OpenRouter.",
+    "Привет! Я работаю в демо-режиме. Добавь VITE_OPENROUTER_API_KEY в .env для полноценной работы.",
+    "Сообщение принято! 🤖 Это демо-ответ от UnboundAI. Настрой OpenRouter API для настоящих ответов.",
+  ];
+  const randomResponse = mockResponses[Math.floor(Math.random() * mockResponses.length)];
+  
+  return { 
+    message: { 
+      id: Date.now(), 
+      content: randomResponse, 
+      role: "assistant", 
+      createdAt: new Date().toISOString() 
+    } 
+  };
 }
 
 async function renameSessionApi(sessionId: number, title: string, headers: Record<string, string>) {

@@ -1,0 +1,6 @@
+-- Этот SQL не нужен! 
+-- Просто добавь ключи в GitHub Secrets:
+-- VITE_OPENROUTER_API_KEY = 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
+-- VITE_HUGGINGFACE_TOKEN = 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
+--
+-- Эти ключи будут встроены в фронтенд при билде и ВСЕ пользователи будут их использовать.

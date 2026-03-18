@@ -1,10 +1,11 @@
 import { useEffect, useState } from "react";
 import { useLocation } from "wouter";
 import { CRTOverlay } from "@/components/Terminal";
+import { useAuth } from "@/hooks/use-auth";
 
 const BOOT_LINES = [
   { text: "UNBOUND AI BIOS v2.1.4 [BETA]", color: "#00ffff", delay: 0 },
-  { text: "Copyright (C) 2025 Unbound Systems Corp. — unboundai.replit.app", color: "#00ffff", delay: 200 },
+  { text: "Copyright (C) 2025 Unbound Systems Corp.", color: "#00ffff", delay: 200 },
   { text: "", delay: 380 },
   { text: "CPU: Neural Core Array @ 4.2 THz ................ OK", color: "#00ff64", delay: 500 },
   { text: "RAM: 256TB Quantum Memory ........................ OK", color: "#00ff64", delay: 700 },
@@ -39,15 +40,27 @@ const BOOT_LINES = [
 
 export default function BootScreen() {
   const [, setLocation] = useLocation();
+  const { user, isLoading } = useAuth();
   const [visibleLines, setVisibleLines] = useState<number[]>([]);
 
   useEffect(() => {
     const timers = BOOT_LINES.map((line, idx) =>
       setTimeout(() => setVisibleLines((prev) => [...prev, idx]), line.delay)
     );
-    const redirect = setTimeout(() => setLocation("/auth"), 5500);
+    
+    // Redirect based on auth status after boot completes
+    const redirect = setTimeout(() => {
+      if (!isLoading) {
+        if (user) {
+          setLocation("/dashboard");
+        } else {
+          setLocation("/auth");
+        }
+      }
+    }, 5500);
+    
     return () => { timers.forEach(clearTimeout); clearTimeout(redirect); };
-  }, [setLocation]);
+  }, [setLocation, user, isLoading]);
 
   return (
     <div className="h-screen w-full bg-black flex items-start justify-start p-8 overflow-hidden relative select-none">
