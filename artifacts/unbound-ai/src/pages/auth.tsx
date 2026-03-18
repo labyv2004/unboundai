@@ -1,44 +1,45 @@
 import { useState } from "react";
-import { useLogin, useRegister } from "@workspace/api-client-react";
 import { useAuth } from "@/hooks/use-auth";
 import { CRTOverlay, ASCII_LOGO } from "@/components/Terminal";
 import { Eye, EyeOff, Terminal, UserPlus } from "lucide-react";
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
-  const [username, setUsername] = useState("");
+  const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
+  const [isPending, setIsPending] = useState(false);
+  const [successMsg, setSuccessMsg] = useState("");
 
-  const { login: authenticate } = useAuth();
-  const loginMutation = useLogin();
-  const registerMutation = useRegister();
+  const { login, register } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrorMsg("");
+    setSuccessMsg("");
 
-    if (!username || !password) {
+    if (!email || !password) {
       setErrorMsg("ERR: Credentials cannot be empty.");
       return;
     }
 
+    setIsPending(true);
+
     try {
       if (isLogin) {
-        const res = await loginMutation.mutateAsync({ data: { username, password } });
-        authenticate(res.token);
+        await login(email, password);
       } else {
-        const res = await registerMutation.mutateAsync({ data: { username, password } });
-        authenticate(res.token);
+        await register(email, password);
+        setSuccessMsg("SUCCESS: Account created! Please check your email to verify.");
       }
     } catch (err: any) {
-      const msg = err?.data?.error || err?.message || "Authentication failed.";
+      const msg = err?.message || "Authentication failed.";
       setErrorMsg(`ERR: ${msg}`);
+    } finally {
+      setIsPending(false);
     }
   };
-
-  const isPending = loginMutation.isPending || registerMutation.isPending;
 
   return (
     <div className="min-h-screen bg-black flex flex-col items-center justify-center p-4 relative overflow-hidden select-none">
@@ -85,20 +86,21 @@ export default function AuthScreen() {
 
           <div className="border border-primary/40 bg-black p-6">
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-              {/* Username */}
+              {/* Email */}
               <div className="flex flex-col gap-1">
-                <label className="text-muted-foreground text-[10px] font-mono tracking-widest">IDENTIFIER:</label>
+                <label className="text-muted-foreground text-[10px] font-mono tracking-widest">EMAIL:</label>
                 <div className="flex items-center gap-2 border border-primary/30 bg-primary/5 px-3 py-2 focus-within:border-primary/70 focus-within:bg-primary/8 transition-colors">
                   <span className="text-primary/60 text-xs font-mono">user@unbound:~$</span>
                   <input
-                    value={username}
-                    onChange={(e) => setUsername(e.target.value)}
+                    value={email}
+                    onChange={(e) => setEmail(e.target.value)}
                     autoFocus
                     disabled={isPending}
                     spellCheck={false}
-                    autoComplete="username"
+                    autoComplete="email"
+                    type="email"
                     className="flex-1 bg-transparent text-primary font-mono text-sm outline-none caret-primary placeholder:text-muted-foreground/40"
-                    placeholder="enter username"
+                    placeholder="enter email"
                   />
                 </div>
               </div>
@@ -131,6 +133,13 @@ export default function AuthScreen() {
               {errorMsg && (
                 <div className="text-destructive text-xs font-mono border border-destructive/30 bg-destructive/5 px-3 py-2">
                   {errorMsg}
+                </div>
+              )}
+
+              {/* Success */}
+              {successMsg && (
+                <div className="text-green-500 text-xs font-mono border border-green-500/30 bg-green-500/5 px-3 py-2">
+                  {successMsg}
                 </div>
               )}
 

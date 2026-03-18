@@ -1,56 +1,63 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useLocation } from "wouter";
-import { useGetMe, User } from "@workspace/api-client-react";
-import { getAuthHeaders } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import type { User } from "@supabase/supabase-js";
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (token: string) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [token, setToken] = useState<string | null>(localStorage.getItem("unbound_token"));
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [, setLocation] = useLocation();
 
-  const { data: user, isLoading, isError } = useGetMe({
-    query: {
-      queryKey: ["/api/auth/me", token],
-      enabled: !!token,
-      retry: false,
-    },
-    request: { headers: getAuthHeaders() }
-  });
+  useEffect(() => {
+    // Check current session on load
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
 
-  const login = useCallback((newToken: string) => {
-    localStorage.setItem("unbound_token", newToken);
-    setToken(newToken);
+    // Listen for auth changes
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  const login = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signInWithPassword({ email, password });
+    if (error) throw error;
     setLocation("/dashboard");
   }, [setLocation]);
 
-  const logout = useCallback(() => {
-    localStorage.removeItem("unbound_token");
-    setToken(null);
+  const register = useCallback(async (email: string, password: string) => {
+    const { error } = await supabase.auth.signUp({ email, password });
+    if (error) throw error;
+  }, []);
+
+  const logout = useCallback(async () => {
+    await supabase.auth.signOut();
     setLocation("/auth");
   }, [setLocation]);
-
-  useEffect(() => {
-    if (isError) {
-      // Token invalid or expired
-      logout();
-    }
-  }, [isError, logout]);
 
   return (
     <AuthContext.Provider
       value={{
-        user: user ?? null,
-        isLoading: isLoading && !!token,
+        user,
+        isLoading,
         login,
+        register,
         logout,
         isAuthenticated: !!user,
       }}
