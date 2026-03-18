@@ -5,7 +5,7 @@ import { Eye, EyeOff, Terminal, UserPlus } from "lucide-react";
 
 export default function AuthScreen() {
   const [isLogin, setIsLogin] = useState(true);
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [errorMsg, setErrorMsg] = useState("");
@@ -19,7 +19,7 @@ export default function AuthScreen() {
     setErrorMsg("");
     setSuccessMsg("");
 
-    if (!email || !password) {
+    if (!username || !password) {
       setErrorMsg("ERR: Credentials cannot be empty.");
       return;
     }
@@ -28,10 +28,10 @@ export default function AuthScreen() {
 
     try {
       if (isLogin) {
-        await login(email, password);
+        await login(username, password);
       } else {
-        await register(email, password);
-        setSuccessMsg("SUCCESS: Account created! Please check your email to verify.");
+        await register(username, password);
+        setSuccessMsg("SUCCESS: Account created! Welcome to UnboundAI.");
       }
     } catch (err: any) {
       const msg = err?.message || "Authentication failed.";
@@ -86,21 +86,21 @@ export default function AuthScreen() {
 
           <div className="border border-primary/40 bg-black p-6">
             <form onSubmit={handleSubmit} className="flex flex-col gap-5">
-              {/* Email */}
+              {/* Username */}
               <div className="flex flex-col gap-1">
-                <label className="text-muted-foreground text-[10px] font-mono tracking-widest">EMAIL:</label>
+                <label className="text-muted-foreground text-[10px] font-mono tracking-widest">USERNAME:</label>
                 <div className="flex items-center gap-2 border border-primary/30 bg-primary/5 px-3 py-2 focus-within:border-primary/70 focus-within:bg-primary/8 transition-colors">
                   <span className="text-primary/60 text-xs font-mono">user@unbound:~$</span>
                   <input
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
+                    value={username}
+                    onChange={(e) => setUsername(e.target.value)}
                     autoFocus
                     disabled={isPending}
                     spellCheck={false}
-                    autoComplete="email"
-                    type="email"
+                    autoComplete="username"
+                    type="text"
                     className="flex-1 bg-transparent text-primary font-mono text-sm outline-none caret-primary placeholder:text-muted-foreground/40"
-                    placeholder="enter email"
+                    placeholder="enter username"
                   />
                 </div>
               </div>

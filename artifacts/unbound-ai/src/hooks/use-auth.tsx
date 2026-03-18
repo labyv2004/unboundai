@@ -1,13 +1,17 @@
 import { createContext, useContext, useEffect, useState, ReactNode, useCallback } from "react";
 import { useLocation } from "wouter";
 import { supabase } from "@/lib/supabase";
-import type { User } from "@supabase/supabase-js";
+
+interface User {
+  id: string;
+  username: string;
+}
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
+  register: (username: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   isAuthenticated: boolean;
 }
@@ -19,35 +23,70 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
   const [, setLocation] = useLocation();
 
+  // Load user from localStorage on startup
   useEffect(() => {
-    // Check current session on load
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
-    // Listen for auth changes
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setUser(session?.user ?? null);
-      setIsLoading(false);
-    });
-
-    return () => subscription.unsubscribe();
+    const stored = localStorage.getItem("unbound_user");
+    if (stored) {
+      try {
+        setUser(JSON.parse(stored));
+      } catch (e) {
+        localStorage.removeItem("unbound_user");
+      }
+    }
+    setIsLoading(false);
   }, []);
 
-  const login = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({ email, password });
-    if (error) throw error;
+  const login = useCallback(async (username: string, password: string) => {
+    // Ищем пользователя по username и password
+    const { data, error } = await supabase
+      .from("users")
+      .select("id, username")
+      .eq("username", username)
+      .eq("password", password)
+      .single();
+
+    if (error || !data) {
+      throw new Error("Invalid username or password");
+    }
+
+    const userData = { id: data.id, username: data.username };
+    setUser(userData);
+    localStorage.setItem("unbound_user", JSON.stringify(userData));
     setLocation("/dashboard");
   }, [setLocation]);
 
-  const register = useCallback(async (email: string, password: string) => {
-    const { error } = await supabase.auth.signUp({ email, password });
-    if (error) throw error;
-  }, []);
+  const register = useCallback(async (username: string, password: string) => {
+    // Проверяем, не занят ли username
+    const { data: existing } = await supabase
+      .from("users")
+      .select("id")
+      .eq("username", username)
+      .single();
+
+    if (existing) {
+      throw new Error("Username already taken");
+    }
+
+    // Создаём нового пользователя
+    const { data, error } = await supabase
+      .from("users")
+      .insert({ username, password })
+      .select("id, username")
+      .single();
+
+    if (error) {
+      throw new Error(error.message);
+    }
+
+    const userData = { id: data.id, username: data.username };
+    setUser(userData);
+    localStorage.setItem("unbound_user", JSON.stringify(userData));
+    setLocation("/dashboard");
+  }, [setLocation]);
 
   const logout = useCallback(async () => {
-    await supabase.auth.signOut();
+    setUser(null);
+    localStorage.removeItem("unbound_user");
     setLocation("/auth");
   }, [setLocation]);
 
