@@ -1,0 +1,36 @@
+modules = ["nodejs-24"]
+
+[[artifacts]]
+id = "artifacts/api-server"
+
+[[artifacts]]
+id = "artifacts/mockup-sandbox"
+
+[deployment]
+router = "application"
+deploymentTarget = "autoscale"
+
+[deployment.postBuild]
+args = ["pnpm", "store", "prune"]
+env = { "CI" = "true" }
+
+[workflows]
+runButton = "Project"
+
+[agent]
+stack = "PNPM_WORKSPACE"
+expertMode = true
+
+[postMerge]
+path = "scripts/post-merge.sh"
+timeoutMs = 20000
+
+[userenv]
+
+[userenv.shared]
+OPENROUTER_API_KEY = "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"
+HF_TOKEN = "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"
+
+[[ports]]
+localPort = 8080
+externalPort = 8080

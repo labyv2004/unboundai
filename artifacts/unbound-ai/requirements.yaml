@@ -1,0 +1,10 @@
+packages:
+  "framer-motion": "For boot sequence and complex terminal animations"
+  "lucide-react": "For subtle UI icons in the dashboard"
+  "date-fns": "For formatting session timestamps"
+  "clsx": "Class name merging utility"
+  "tailwind-merge": "Tailwind class merging utility"
+
+notes:
+  - "Using pure black background, cyan text, and deep blue borders for BIOS aesthetic"
+  - "All API calls use the @workspace/api-client-react hooks with Authorization headers"
