@@ -1,20 +1,17 @@
 import { useState, useEffect } from "react";
 import { TerminalPanel } from "@/components/Terminal";
-import { getAuthHeaders } from "@/lib/utils";
+import { supabase } from "@/lib/supabase";
+import { useAuth } from "@/hooks/use-auth";
 import {
   Brain, Plus, Pencil, Trash2, Check, X, Cpu, Server,
   RefreshCw, Link, ToggleLeft, ToggleRight, AlertCircle,
 } from "lucide-react";
 
-function getApiBase() {
-  return (import.meta as any).env?.BASE_URL?.replace(/\/$/, "") || "";
-}
-
 interface Memory {
-  id: number;
+  id: string;
   content: string;
   source: string;
-  createdAt: string;
+  created_at: string;
 }
 
 interface McpServer {
@@ -40,55 +37,76 @@ function saveMcpServers(servers: McpServer[]) {
 }
 
 export default function MemoryTab() {
+  const { user } = useAuth();
   const [tab, setTab] = useState<"memory" | "context" | "mcp">("memory");
-  const headers = getAuthHeaders();
 
   // ── MEMORY ─────────────────────────────────────────────────────────────────
   const [memories, setMemories] = useState<Memory[]>([]);
   const [memLoading, setMemLoading] = useState(false);
   const [newMemory, setNewMemory] = useState("");
-  const [editingId, setEditingId] = useState<number | null>(null);
+  const [editingId, setEditingId] = useState<string | null>(null);
   const [editValue, setEditValue] = useState("");
 
   const fetchMemories = async () => {
+    if (!user) return;
     setMemLoading(true);
     try {
-      const res = await fetch(`${getApiBase()}/api/memories`, { headers });
-      const data = await res.json();
-      setMemories(Array.isArray(data) ? data : []);
-    } catch {
+      const { data, error } = await supabase
+        .from("memories")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      
+      if (error) {
+        console.error("Error fetching memories:", error);
+        setMemories([]);
+      } else {
+        setMemories(data || []);
+      }
+    } catch (err) {
+      console.error("Error:", err);
+      setMemories([]);
     } finally {
       setMemLoading(false);
     }
   };
 
-  useEffect(() => { fetchMemories(); }, []);
+  useEffect(() => { 
+    if (user) fetchMemories(); 
+  }, [user]);
 
   const addMemory = async () => {
-    if (!newMemory.trim()) return;
-    await fetch(`${getApiBase()}/api/memories`, {
-      method: "POST",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ content: newMemory.trim() }),
-    });
-    setNewMemory("");
-    fetchMemories();
+    if (!newMemory.trim() || !user) return;
+    const { error } = await supabase
+      .from("memories")
+      .insert({ 
+        user_id: user.id,
+        content: newMemory.trim(),
+        source: "user" 
+      });
+    
+    if (!error) {
+      setNewMemory("");
+      fetchMemories();
+    }
   };
 
-  const saveEdit = async (id: number) => {
+  const saveEdit = async (id: string) => {
     if (!editValue.trim()) return;
-    await fetch(`${getApiBase()}/api/memories/${id}`, {
-      method: "PATCH",
-      headers: { ...headers, "Content-Type": "application/json" },
-      body: JSON.stringify({ content: editValue.trim() }),
-    });
+    await supabase
+      .from("memories")
+      .update({ content: editValue.trim() })
+      .eq("id", id);
     setEditingId(null);
     fetchMemories();
   };
 
-  const deleteMemory = async (id: number) => {
+  const deleteMemory = async (id: string) => {
     if (!confirm("Delete this memory permanently?")) return;
-    await fetch(`${getApiBase()}/api/memories/${id}`, { method: "DELETE", headers });
+    await supabase
+      .from("memories")
+      .delete()
+      .eq("id", id);
     fetchMemories();
   };
 
@@ -236,7 +254,7 @@ export default function MemoryTab() {
                           <span className={`px-1 border text-[8px] uppercase ${mem.source === "ai" ? "border-secondary/40 text-secondary/60" : "border-primary/30 text-primary/50"}`}>
                             {mem.source === "ai" ? "AI" : "USER"}
                           </span>
-                          {new Date(mem.createdAt).toLocaleDateString()}
+                          {new Date(mem.created_at).toLocaleDateString()}
                         </div>
                       </>
                     )}
