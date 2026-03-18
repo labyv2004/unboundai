@@ -14,7 +14,7 @@ if (Number.isNaN(port) || port <= 0) {
 
 const basePath = 
   process.env.BASE_PATH || 
-  (process.env.GITHUB_PAGES === "true" ? "/unboundai/" : "/");
+  (process.env.GITHUB_PAGES === "true" ? "/" : "/");
 
 export default defineConfig({
   base: basePath,
