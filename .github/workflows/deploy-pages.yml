@@ -4,18 +4,14 @@ on:
   push:
     branches:
       - main
-  pull_request:
-    branches:
-      - main
+  workflow_dispatch:
 
 jobs:
-  build-and-deploy:
+  build:
     runs-on: ubuntu-latest
     
     permissions:
       contents: read
-      pages: write
-      id-token: write
 
     steps:
       - name: Checkout repository
@@ -51,15 +47,26 @@ jobs:
         env:
           GITHUB_PAGES: 'true'
 
-      - name: Setup Pages
-        uses: actions/configure-pages@v4
-
-      - name: Upload artifact
-        uses: actions/upload-pages-artifact@v2
+      - name: Upload artifact to Pages
+        uses: actions/upload-pages-artifact@v3
         with:
           path: 'artifacts/unbound-ai/dist/public'
 
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    
+    permissions:
+      pages: write
+      id-token: write
+    
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    
+    if: github.ref == 'refs/heads/main'
+
+    steps:
       - name: Deploy to GitHub Pages
         id: deployment
-        uses: actions/deploy-pages@v3
-        if: github.ref == 'refs/heads/main'
+        uses: actions/deploy-pages@v4
